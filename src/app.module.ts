@@ -13,6 +13,10 @@ import { UserService } from './user/user.service';
 import { UserController } from './user/user.controller';
 import { UserModule } from './user/user.module';
 import { ConfigModule } from '@nestjs/config';
+import { WishlistService } from './wishlist/wishlist.service';
+import { WishlistController } from './wishlist/wishlist.controller';
+import { WishlistModule } from './wishlist/wishlist.module';
+import { Wishlist } from './entities/wishlist.entity';
 
 @Module({
   imports: [
@@ -24,7 +28,7 @@ import { ConfigModule } from '@nestjs/config';
       host: 'localhost',
       port: 5432,
       username: 'postgres',
-      password: 'root',
+      password: '101std.a',
       database: 'FreshBasket',
       entities: [__dirname + '/**/*.entity{.ts,.js}'],
       synchronize: true, // Set to false in production
@@ -36,9 +40,10 @@ import { ConfigModule } from '@nestjs/config';
     OrderModule,
     CartModule,
     UserModule,
+    WishlistModule,
   ],
-  controllers: [AppController,],
-  providers: [AppService, EmailService,],
+  controllers: [AppController, WishlistController,],
+  providers: [AppService, EmailService, WishlistService,],
   exports: [EmailService],
 })
 export class AppModule {}
