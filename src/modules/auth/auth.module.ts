@@ -7,10 +7,12 @@ import { OTP } from 'src/entities/otp.entity';
 import { EmailService } from 'src/services/email/email.service';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([User, OTP]), // Link User and OTP entities
+
+
+imports: [
+    TypeOrmModule.forFeature([User, OTP]), 
   ],
-  controllers: [AuthController], // Link AuthController
-  providers: [AuthService, EmailService], // Provide AuthService and EmailService
+  controllers: [AuthController], 
+  providers: [AuthService, EmailService],
 })
 export class AuthModule {}

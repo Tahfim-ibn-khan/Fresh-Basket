@@ -1,31 +1,32 @@
 import { Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import * as nodemailer from 'nodemailer';
 
 @Injectable()
 export class EmailService {
   private transporter;
 
-  constructor() {
+  constructor(private configService: ConfigService) {
     this.transporter = nodemailer.createTransport({
-      host: 'smtp.gmail.com', // Gmail SMTP server
-      port: 465, // SSL port
-      secure: true, // Use SSL
+      host: this.configService.get<string>('EMAIL_HOST'),
+      port: this.configService.get<number>('EMAIL_PORT'),
+      secure: true, 
       auth: {
-        user: 'tahfimibnkhan123@gmail.com', // Your Gmail address
-        pass: 'egozavsvsytxaoeg', // Your Gmail App Password
+        user: this.configService.get<string>('EMAIL_USER'),
+        pass: this.configService.get<string>('EMAIL_PASSWORD'),
       },
       tls: {
-        rejectUnauthorized: false, // Allow self-signed certificates (optional)
+        rejectUnauthorized: false,
       },
     });
   }
 
   async sendEmail(to: string, subject: string, text: string): Promise<void> {
     await this.transporter.sendMail({
-      from: '"FreshBasket" <tahfimibnkhan123@gmail.com>', // Sender address
-      to, // Recipient email
-      subject, // Email subject
-      text, // Email body
+      from: `"FreshBasket" <${this.configService.get<string>('EMAIL_USER')}>`,
+      to,
+      subject,
+      text,
     });
   }
 }

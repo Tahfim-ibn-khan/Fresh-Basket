@@ -7,9 +7,9 @@ const nodemailer = require('nodemailer');
     secure: true,
     auth: {
       user: 'tahfimibnkhan123@gmail.com',
-      pass: 'egozavsvsytxaoeg',
+      pass: '',
     },
-    family: 4, // Force IPv4
+    family: 4, 
   });
 
   try {

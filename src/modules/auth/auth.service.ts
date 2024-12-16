@@ -19,14 +19,14 @@ import { EmailService } from 'src/services/email/email.service';
 export class AuthService {
   constructor(
     @InjectRepository(User)
-    private readonly userRepository: Repository<User>,
+  private readonly userRepository: Repository<User>,
     @InjectRepository(OTP)
-    private readonly otpRepository: Repository<OTP>,
+        private readonly otpRepository: Repository<OTP>,
     private readonly emailService: EmailService,
   ) {}
 
-  // Register a new user
-  async register(registerDto: RegisterDto): Promise<string> {
+
+async register(registerDto: RegisterDto): Promise<string> {
     const { name, email, password } = registerDto;
 
     const existingUser = await this.userRepository.findOne({ where: { email } });
@@ -34,46 +34,55 @@ export class AuthService {
       throw new BadRequestException('User with this email already exists.');
     }
 
+    //Hash pass is used to make the given password encrypted
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const user = this.userRepository.create({
+ const user = this.userRepository.create({
       name,
       email,
       password: hashedPassword,
-      role: 'CUSTOMER',
+      role: 'Customer',
     });
     await this.userRepository.save(user);
 
-    return 'Registration successful. You can now log in.';
+
+    var message="'Registration successful.'"
+    return message;
   }
 
-  // Login a user
-  async login(loginDto: LoginDto): Promise<string> {
+
+      async login(loginDto: LoginDto): Promise<string> {
     const { email, password } = loginDto;
 
-    const user = await this.userRepository.findOne({ where: { email } });
+  const user = await this.userRepository.findOne({ where: { email } });
     if (!user) {
-      throw new NotFoundException('Invalid email or password.');
+      throw new NotFoundException('You have put wrong credentials, try again.');
     }
 
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
-      throw new UnauthorizedException('Invalid email or password.');
+      throw new UnauthorizedException('You have put wrong credentials, try again.');
     }
 
-    return 'Login successful!';
+    return 'Login successful';
   }
 
-  // Forgot password - send OTP
-  async forgotPassword(forgotPasswordDto: ForgotPasswordDto): Promise<string> {
+
+
+
+
+
+  
+async forgotPassword(forgotPasswordDto: ForgotPasswordDto): Promise<string> {
     const { email } = forgotPasswordDto;
 
-    const user = await this.userRepository.findOne({ where: { email } });
+
+const user = await this.userRepository.findOne({ where: { email } });
     if (!user) {
       throw new NotFoundException('User not found.');
     }
 
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+const otp = Math.floor(100000 + Math.random() * 900000).toString();
     const hashedOtp = await bcrypt.hash(otp, 10);
 
     const expiryTime = new Date();
@@ -88,13 +97,17 @@ export class AuthService {
     await this.emailService.sendEmail(
       email,
       'Reset Your Password',
-      `Your OTP for resetting your FreshBasket password is: ${otp}. It will expire in 5 minutes.`,
+      `Your OTP for resetting your FreshBasket password is: ***${otp}.**** It will expire in 5 minutes.`,
     );
 
-    return 'An OTP has been sent to your email.';
+    return `Otp sent to ${forgotPasswordDto.email}`;
   }
 
-  // Reset password
+
+
+
+
+
   async resetPassword(resetPasswordDto: ResetPasswordDto): Promise<string> {
     const { email, otp, newPassword } = resetPasswordDto;
 

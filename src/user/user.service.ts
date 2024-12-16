@@ -11,7 +11,7 @@ export class UserService {
     private readonly userRepository: Repository<User>,
   ) {}
 
-  // Add a new user
+
   async addUser(addUserDto: AddUserDto): Promise<string> {
     const { name, email, password, role } = addUserDto;
 
@@ -26,12 +26,12 @@ export class UserService {
     return 'User successfully added!';
   }
 
-  // Retrieve all users
+
   async findAll(): Promise<User[]> {
     return await this.userRepository.find();
   }
 
-  // Update a user's role by ID
+
   async updateUserRole(id: number, role: string): Promise<string> {
     const user = await this.userRepository.findOne({ where: { id } });
     if (!user) {
