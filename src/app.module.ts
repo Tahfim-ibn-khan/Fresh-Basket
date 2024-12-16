@@ -9,6 +9,9 @@ import { CategoryModule } from './modules/category/category.module';
 import { OrderModule } from './modules/order/order.module';
 import { CartModule } from './modules/cart/cart.module';
 import { EmailService } from './services/email/email.service';
+import { UserService } from './user/user.service';
+import { UserController } from './user/user.controller';
+import { UserModule } from './user/user.module';
 
 @Module({
   imports: [
@@ -28,9 +31,10 @@ import { EmailService } from './services/email/email.service';
     CategoryModule,
     OrderModule,
     CartModule,
+    UserModule,
   ],
-  controllers: [AppController],
-  providers: [AppService, EmailService],
+  controllers: [AppController,],
+  providers: [AppService, EmailService,],
   exports: [EmailService],
 })
 export class AppModule {}
