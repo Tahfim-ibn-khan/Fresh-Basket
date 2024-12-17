@@ -20,7 +20,10 @@ export class User {
   @Column()
   password: string;
 
-  @Column({ default: 'CUSTOMER' })
+  @Column({ default: false }) 
+  isVerified: boolean;
+
+  @Column({ default: 'customer' })
   role: string;
 
   @CreateDateColumn()

@@ -1,22 +1,42 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
+import { Module } from '@nestjs/common';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { JwtModule } from '@nestjs/jwt';
+import { PassportModule } from '@nestjs/passport';
 
-describe('AppController', () => {
-  let appController: AppController;
 
-  beforeEach(async () => {
-    const app: TestingModule = await Test.createTestingModule({
-      controllers: [AppController],
-      providers: [AppService],
-    }).compile();
 
-    appController = app.get<AppController>(AppController);
-  });
+import { User } from 'src/entities/user.entity';
+import { OTP } from 'src/entities/otp.entity';
+import { EmailService } from 'src/services/email/email.service';
+import { AuthController } from './modules/auth/auth.controller';
+import { AuthService } from './modules/auth/auth.service';
+import { JwtStrategy } from './modules/auth/jwt.strategy';
+import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
+import { RolesGuard } from './common/guards/roles.guard';
 
-  describe('root', () => {
-    it('should return "Hello World!"', () => {
-      expect(appController.getHello()).toBe('Hello World!');
-    });
-  });
-});
+@Module({
+  imports: [
+    TypeOrmModule.forFeature([User, OTP]), // User and OTP entities
+    PassportModule.register({ defaultStrategy: 'jwt' }), // Use JWT strategy
+    JwtModule.register({
+      secret: process.env.JWT_SECRET || 'secretKey',
+      signOptions: { expiresIn: '1h' }, // JWT expiry time
+    }),
+  ],
+  controllers: [AuthController],
+  providers: [
+    AuthService,
+    EmailService,
+    JwtStrategy,       // Register JWT strategy for token validation
+    {
+      provide: 'APP_GUARD',
+      useClass: JwtAuthGuard, // Apply JWT Guard globally for protected routes
+    },
+    {
+      provide: 'APP_GUARD',
+      useClass: RolesGuard, // Apply Roles Guard globally for RBAC
+    },
+  ],
+  exports: [AuthService, JwtStrategy], // Export for other modules to use
+})
+export class AuthModule {}
