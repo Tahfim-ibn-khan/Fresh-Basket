@@ -1,18 +1,18 @@
-import { Controller, Get, UseGuards } from '@nestjs/common';
-import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
+import { Controller, Get, UseGuards, Req } from '@nestjs/common';
 import { RolesGuard } from 'src/common/guards/roles.guard';
 import { Roles } from 'src/common/decorators/roles.decorator';
-import { GetUser } from 'src/common/decorators/get-user.decorator';
+import { Request } from 'express';
 
 @Controller('admin')
-@UseGuards(JwtAuthGuard, RolesGuard) // Protect all routes
 export class AdminController {
   @Get('dashboard')
-  @Roles('admin') // Only 'admin' role can access
-  getDashboard(@GetUser() user: any) {
+  @UseGuards(RolesGuard) // RolesGuard expects req.user to be set by JwtMiddleware
+  @Roles('admin') // Only allow 'admin' role
+  getAdminDashboard(@Req() req: Request) {
+    console.log('AdminController: Request User:', req.user);
     return {
-      message: 'Welcome to Admin Dashboard',
-      user,
+      message: 'Welcome Admin Dashboard!',
+      user: req.user,
     };
   }
 }

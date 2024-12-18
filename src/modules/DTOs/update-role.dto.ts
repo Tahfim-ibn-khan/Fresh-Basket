@@ -2,6 +2,6 @@ import { IsIn, IsNotEmpty } from 'class-validator';
 
 export class UpdateRoleDto {
   @IsNotEmpty()
-  @IsIn(['Admin', 'Customer', 'Delivery Agent', 'Store Manager'])
+  @IsIn(['admin', 'customer', 'delivery-agent', 'store manager'])
   role: string;
 }

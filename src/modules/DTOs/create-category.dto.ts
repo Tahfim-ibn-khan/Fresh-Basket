@@ -7,5 +7,5 @@ export class CreateCategoryDto {
 
   @IsOptional()
   @IsString()
-  description?: string;
+  description: string;
 }

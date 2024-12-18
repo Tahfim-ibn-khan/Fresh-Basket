@@ -27,7 +27,8 @@ export class AuthService {
     private readonly jwtService: JwtService,
   ) {}
 
-  // Register user and send OTP
+
+
   async register(registerDto: RegisterDto): Promise<string> {
     const { name, email, password } = registerDto;
 
@@ -66,7 +67,8 @@ export class AuthService {
     return 'Registration successful. Check your email for OTP to verify your account.';
   }
 
-  // Verify OTP and update isVerified status
+
+
   async verifyOtp(email: string, otp: string): Promise<string> {
     const user = await this.userRepository.findOne({ where: { email } });
     if (!user) throw new NotFoundException('User not found.');
@@ -119,7 +121,9 @@ export class AuthService {
   }
   
 
-  // Forgot Password
+
+
+
   async forgotPassword(forgotPasswordDto: ForgotPasswordDto): Promise<string> {
     const { email } = forgotPasswordDto;
 
@@ -146,7 +150,10 @@ export class AuthService {
     return 'OTP sent to your email for password reset.';
   }
 
-  // Reset Password
+
+
+
+
   async resetPassword(resetPasswordDto: ResetPasswordDto): Promise<string> {
     const { email, otp, newPassword } = resetPasswordDto;
 

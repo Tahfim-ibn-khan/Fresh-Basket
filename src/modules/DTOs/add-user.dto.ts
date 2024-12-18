@@ -11,6 +11,6 @@ export class AddUserDto {
   @MinLength(6)
   password: string;
 
-  @IsIn(['Admin', 'Customer', 'Delivery Agent', 'Store Manager'])
+  @IsIn(['admin', 'customer', 'delivery-agent', 'store manager'])
   role: string;
 }
