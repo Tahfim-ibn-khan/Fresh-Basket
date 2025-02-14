@@ -1,11 +1,12 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import * as fs from 'fs';
+import { Injectable, NotFoundException, InternalServerErrorException } from '@nestjs/common';
 import * as PDFDocument from 'pdfkit';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Order } from 'src/entities/order.entity';
 import { User } from 'src/entities/user.entity';
-import * as path from 'path';
+import { v2 as cloudinary } from 'cloudinary';
+import stream from 'stream';
+import { promisify } from 'util';
 
 @Injectable()
 export class InvoiceService {
@@ -14,9 +15,15 @@ export class InvoiceService {
     private readonly orderRepository: Repository<Order>,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
-  ) {}
+  ) {
+    cloudinary.config({
+      cloud_name: 'dquhmyg3y',
+      api_key: '339583574244771',
+      api_secret: 'UoUKPOUzhxoWFs_yiTKHzoNLRc4',
+    });
+  }
 
-  async generateInvoice(orderId: number) {
+  async generateInvoice(orderId: number): Promise<{ message: string; invoiceUrl: string }> {
     const order = await this.orderRepository.findOne({
       where: { id: orderId },
       relations: ['user'],
@@ -32,58 +39,74 @@ export class InvoiceService {
       throw new NotFoundException(`Customer for Order #${orderId} not found.`);
     }
 
-    const invoicePath = `./invoices/invoice-${orderId}.pdf`;
+    // ✅ Generate Invoice in Memory
+    const pdfBuffer = await this.createInvoicePdf(order, user);
 
-    if (fs.existsSync(invoicePath)) {
-      fs.unlinkSync(invoicePath);
+    // ✅ Upload to Cloudinary
+    const uploadedInvoice = await this.uploadToCloudinary(pdfBuffer, orderId);
+
+    if (!uploadedInvoice?.secure_url) {
+      throw new InternalServerErrorException('Failed to upload invoice to Cloudinary.');
     }
 
-    const doc = new PDFDocument({ margin: 50 });
-    doc.pipe(fs.createWriteStream(invoicePath));
+    return { message: `Invoice for Order #${orderId} has been generated.`, invoiceUrl: uploadedInvoice.secure_url };
+  }
 
-    // ✅ Add Company Logo
-    const logoPath = path.join(__dirname, '../../logo.png');
-    if (fs.existsSync(logoPath)) {
-      doc.image(logoPath, 50, 30, { width: 100 }).moveDown(2);
-    }
+  private async createInvoicePdf(order: Order, user: User): Promise<Buffer> {
+    return new Promise((resolve, reject) => {
+      const doc = new PDFDocument({ margin: 50 });
+      const buffers: Buffer[] = [];
 
-    // ✅ Invoice Header
-    doc.fontSize(20).text(`Invoice - Order #${orderId}`, { align: 'center' }).moveDown();
-    doc.fontSize(14).text(`Date: ${new Date().toLocaleDateString()}`, { align: 'right' }).moveDown();
+      doc.on('data', (chunk) => buffers.push(chunk));
+      doc.on('end', () => resolve(Buffer.concat(buffers)));
+      doc.on('error', (err) => reject(err));
 
-    // ✅ Customer Details
-    doc.fontSize(14).text('Customer Details:', { underline: true }).moveDown(0.5);
-    doc.fontSize(12).text(`Name: ${user.name}`);
-    doc.text(`Email: ${user.email}`);
-    doc.text(`Phone: ${order.phoneNumber || 'N/A'}`);
-    doc.text(`Address: ${order.deliveryAddress || 'N/A'}`).moveDown();
+      // ✅ Invoice Header
+      doc.fontSize(20).text(`Invoice - Order #${order.id}`, { align: 'center' }).moveDown();
+      doc.fontSize(14).text(`Date: ${new Date().toLocaleDateString()}`, { align: 'right' }).moveDown();
 
-    // ✅ Order Summary Table
-    doc.fontSize(14).text('Order Summary:', { underline: true }).moveDown(0.5);
+      // ✅ Customer Details
+      doc.fontSize(14).text('Customer Details:', { underline: true }).moveDown(0.5);
+      doc.fontSize(12).text(`Name: ${user.name}`);
+      doc.text(`Email: ${user.email}`);
+      doc.text(`Phone: ${order.phoneNumber || 'N/A'}`);
+      doc.text(`Address: ${order.deliveryAddress || 'N/A'}`).moveDown();
 
-    // Table Headers
-    const tableTop = doc.y;
-    doc.fontSize(12)
-      .text('Item', 50, tableTop)
-      .text('Quantity', 200, tableTop)
-      .text('Unit Price (Tk)', 350, tableTop)
-      .text('Total (Tk)', 450, tableTop);
+      // ✅ Order Summary
+      doc.fontSize(14).text('Order Summary:', { underline: true }).moveDown(0.5);
+      doc.fontSize(12)
+        .text('Item', 50)
+        .text('Quantity', 200)
+        .text('Unit Price (Tk)', 350)
+        .text('Total (Tk)', 450);
 
-    // Table Data
-    order.products.forEach((product, index) => {
-      const rowY = tableTop + 20 + index * 20;
-      doc.text(product.productName, 50, rowY)
-        .text(product.quantity.toString(), 200, rowY)
-        .text(`${product.unitPrice}`, 350, rowY)
-        .text(`${product.total}`, 450, rowY);
+      order.products.forEach((product, index) => {
+        const rowY = doc.y + 10 + index * 20;
+        doc.text(product.productName, 50, rowY)
+          .text(product.quantity.toString(), 200, rowY)
+          .text(`${product.unitPrice}`, 350, rowY)
+          .text(`${product.total}`, 450, rowY);
+      });
+
+      doc.moveDown();
+      doc.fontSize(14).text(`Total Amount: ${order.totalPrice} Tk`, { align: 'right' }).moveDown();
+      doc.end();
     });
+  }
 
-    doc.moveDown();
+  private async uploadToCloudinary(buffer: Buffer, orderId: number) {
+    const uploadStream = cloudinary.uploader.upload_stream(
+      { resource_type: 'raw', folder: 'invoices', public_id: `invoice-${orderId}`, format: 'pdf' },
+      (error, result) => {
+        if (error) {
+          console.error('Cloudinary Upload Error:', error);
+          throw new InternalServerErrorException('Failed to upload invoice.');
+        }
+        return result;
+      }
+    );
 
-    // ✅ Total Amount (with Space Before Value)
-    doc.fontSize(14).text(`Total Amount: ${order.totalPrice}`, { align: 'right' }).moveDown();
-
-    doc.end();
-    return `Invoice for Order #${orderId} has been generated.`;
+    const pipeline = promisify(stream.pipeline);
+    await pipeline(stream.Readable.from(buffer), uploadStream);
   }
 }
