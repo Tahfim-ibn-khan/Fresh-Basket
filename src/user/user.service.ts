@@ -55,8 +55,14 @@ export class UserService {
     if (!user) {
       throw new NotFoundException('User not found.');
     }
+  
+    if (!user.profilePicture) {
+      user.profilePicture = "https://res.cloudinary.com/dquhmyg3y/image/upload/v1700000000/default-profile.png";
+    }
+  
     return user;
   }
+  
 
   async updateProfile(id: number, updateProfileDto: UpdateProfileDto, file?: Express.Multer.File) {
     const user = await this.userRepository.findOne({ where: { id } });
