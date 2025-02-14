@@ -4,7 +4,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Order } from 'src/entities/order.entity';
 import { User } from 'src/entities/user.entity';
-import { v2 as cloudinary } from 'cloudinary';
+import { v2 as cloudinary, UploadApiResponse } from 'cloudinary';
 import stream from 'stream';
 
 @Injectable()
@@ -41,9 +41,9 @@ export class InvoiceService {
     const pdfBuffer = await this.createInvoicePDF(order, user);
 
     // ✅ Upload to Cloudinary
-    const uploadedInvoice = await this.uploadToCloudinary(pdfBuffer, `invoice-${orderId}.pdf`);
+    const uploadedInvoice: UploadApiResponse | null = await this.uploadToCloudinary(pdfBuffer, `invoice-${orderId}.pdf`);
 
-    if (!uploadedInvoice || !uploadedInvoice.secure_url) {
+    if (!uploadedInvoice?.secure_url) {
       throw new InternalServerErrorException("Failed to upload invoice to Cloudinary.");
     }
 
@@ -96,13 +96,16 @@ export class InvoiceService {
     });
   }
 
-  private async uploadToCloudinary(pdfBuffer: Buffer, filename: string) {
+  private async uploadToCloudinary(pdfBuffer: Buffer, filename: string): Promise<UploadApiResponse | null> {
     return new Promise((resolve, reject) => {
       const uploadStream = cloudinary.uploader.upload_stream(
         { resource_type: 'raw', public_id: filename, folder: 'invoices' },
         (error, result) => {
-          if (error) reject(error);
-          else resolve(result);
+          if (error) {
+            reject(error);
+          } else {
+            resolve(result as UploadApiResponse);
+          }
         }
       );
 
