@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, InternalServerErrorException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import Stripe from 'stripe';
@@ -12,11 +12,11 @@ export class PaymentService {
     @InjectRepository(Order)
     private readonly orderRepository: Repository<Order>,
   ) {
-    // ✅ Hardcoded Stripe Secret Key (Make sure this is correct)
-    const secretKey = 'sk_test_51QWgQ4E24OBKFp2Uxj21Mc4vDLyYhfRW35NfuQza4hbpnfhSq3IfpQBQ1i5xQEN3FmNtlPuZ2waWqRGjRFXHbNVv00w2fVZofM';
-
+    const secretKey = 'sk_test_51QWgQ4E24OBKFp2Uxj21Mc4vDLyYhfRW35NfuQza4hbpnfhSq3IfpQBQ1i5xQEN3FmNtlPuZ2waWqRGjRFXHbNVv00w2fVZofM'; // Hardcoded Stripe Secret Key for testing
+    if (!secretKey) {
+      throw new InternalServerErrorException('Stripe Secret Key is missing.');
+    }
     this.stripe = new Stripe(secretKey, { apiVersion: '2024-11-20.acacia' });
-    console.log("✅ Hardcoded STRIPE_SECRET_KEY is being used.");
   }
 
   async createPaymentSession(orderId: number): Promise<{ paymentUrl: string }> {
@@ -55,7 +55,7 @@ export class PaymentService {
     }
 
     return { paymentUrl: session.url };
-  }  
+  }
 
   async updateOrderStatus(orderId: number, status: 'paid' | 'pending'): Promise<string> {
     const order = await this.orderRepository.findOne({ where: { id: orderId } });
@@ -72,5 +72,26 @@ export class PaymentService {
     await this.orderRepository.save(order);
 
     return `Order #${orderId} status updated to ${status}.`;
+  }
+
+  async handleStripeWebhook(req: any, signature: string): Promise<void> {
+    const secret = 'whsec_TEST_WEBHOOK_SECRET'; // Hardcoded Webhook Secret for testing
+    let event: Stripe.Event;
+
+    try {
+      event = this.stripe.webhooks.constructEvent(req.rawBody, signature, secret);
+    } catch (err) {
+      console.error('⚠️ Webhook signature verification failed:', err.message);
+      throw new Error('Invalid webhook signature.');
+    }
+
+    if (event.type === 'checkout.session.completed') {
+      const session = event.data.object as Stripe.Checkout.Session;
+      const orderId = session.metadata?.orderId;
+
+      if (orderId) {
+        await this.updateOrderStatus(Number(orderId), 'paid');
+      }
+    }
   }
 }
