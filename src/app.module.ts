@@ -2,7 +2,7 @@ import { Module, MiddlewareConsumer, RequestMethod } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 
 import { AdminModule } from './modules/admin/admin.module';
 import { AuthModule } from './modules/auth/auth.module';
@@ -22,15 +22,17 @@ import { InvoiceModule } from './modules/invoice/invoice.module';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({
-      isGlobal: true,
-    }),
-    TypeOrmModule.forRoot({
-      type: 'postgres',
-      url: 'postgresql://postgres:euFmQFtsyGOSgdlOgRLQLjGgbVlUOkdj@junction.proxy.rlwy.net:30325/railway',
-      autoLoadEntities: true,
-      synchronize: true,
-      ssl: { rejectUnauthorized: false }, 
+    ConfigModule.forRoot({ isGlobal: true }),
+    TypeOrmModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: async (configService: ConfigService) => ({
+        type: 'postgres',
+        url: configService.get<string>('DATABASE_URL'),
+        autoLoadEntities: true,
+        synchronize: configService.get<boolean>('DB_SYNCHRONIZE', false),
+        ssl: { rejectUnauthorized: false },
+      }),
+      inject: [ConfigService],
     }),
     AdminModule,
     AuthModule,
@@ -62,11 +64,11 @@ export class AppModule {
     consumer
       .apply(JwtMiddleware)
       .exclude(
-        { path: 'products/getall', method: RequestMethod.GET }, // ✅ Public Route (No Token Needed)
-        { path: 'products/get/:id', method: RequestMethod.GET }, // ✅ Public Route (No Token Needed)
-        { path: 'auth/login', method: RequestMethod.POST }, // ✅ Public Route
-        { path: 'auth/register', method: RequestMethod.POST }, // ✅ Public Route
-        { path: 'auth/verify-otp', method: RequestMethod.POST }, // ✅ Public Route
+        { path: 'products/getall', method: RequestMethod.GET }, 
+        { path: 'products/get/:id', method: RequestMethod.GET }, 
+        { path: 'auth/login', method: RequestMethod.POST }, 
+        { path: 'auth/register', method: RequestMethod.POST }, 
+        { path: 'auth/verify-otp', method: RequestMethod.POST }, 
       )
       .forRoutes('*'); 
   }

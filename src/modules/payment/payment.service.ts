@@ -2,6 +2,7 @@ import { Injectable, NotFoundException, InternalServerErrorException } from '@ne
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import Stripe from 'stripe';
+import { ConfigService } from '@nestjs/config';
 import { Order } from 'src/entities/order.entity';
 
 @Injectable()
@@ -9,10 +10,11 @@ export class PaymentService {
   private stripe: Stripe;
 
   constructor(
+    private configService: ConfigService,
     @InjectRepository(Order)
     private readonly orderRepository: Repository<Order>,
   ) {
-    const secretKey = 'sk_test_51QWgQ4E24OBKFp2Uxj21Mc4vDLyYhfRW35NfuQza4hbpnfhSq3IfpQBQ1i5xQEN3FmNtlPuZ2waWqRGjRFXHbNVv00w2fVZofM'; // Hardcoded Stripe Secret Key for testing
+    const secretKey = this.configService.get<string>('STRIPE_SECRET_KEY');
     if (!secretKey) {
       throw new InternalServerErrorException('Stripe Secret Key is missing.');
     }
@@ -30,6 +32,8 @@ export class PaymentService {
       throw new Error('This order has already been paid for.');
     }
 
+    const clientOrigin = this.configService.get<string>('CLIENT_ORIGIN', 'http://localhost:3001');
+
     // ✅ Create Stripe Checkout Session
     const session = await this.stripe.checkout.sessions.create({
       payment_method_types: ['card'],
@@ -46,8 +50,8 @@ export class PaymentService {
         },
       ],
       mode: 'payment',
-      success_url: `http://localhost:3001/payment/success?session_id={CHECKOUT_SESSION_ID}&orderId=${order.id}`,
-      cancel_url: `http://localhost:3001/payment/cancel/${order.id}`,
+      success_url: `${clientOrigin}/payment/success?session_id={CHECKOUT_SESSION_ID}&orderId=${order.id}`,
+      cancel_url: `${clientOrigin}/payment/cancel/${order.id}`,
     });
 
     if (!session.url) {
@@ -75,7 +79,11 @@ export class PaymentService {
   }
 
   async handleStripeWebhook(req: any, signature: string): Promise<void> {
-    const secret = 'whsec_TEST_WEBHOOK_SECRET'; // Hardcoded Webhook Secret for testing
+    const secret = this.configService.get<string>('STRIPE_WEBHOOK_SECRET');
+    if (!secret) {
+      throw new InternalServerErrorException("Stripe Webhook Secret is missing.");
+    }
+    
     let event: Stripe.Event;
 
     try {
