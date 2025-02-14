@@ -5,6 +5,7 @@ import { User } from 'src/entities/user.entity';
 import { AddUserDto } from '../modules/DTOs/add-user.dto';
 import { UpdateProfileDto } from '../modules/DTOs/update-profile.dto';
 import { v2 as cloudinary } from 'cloudinary';
+import { UploadApiResponse } from 'cloudinary';
 
 @Injectable()
 export class UserService {
@@ -68,7 +69,7 @@ export class UserService {
     if (updateProfileDto.password) user.password = updateProfileDto.password;
 
     if (file) {
-      const uploadResult = await cloudinary.uploader.upload(file.path, {
+      const uploadResult: UploadApiResponse = await cloudinary.uploader.upload(file.path, {
         folder: 'profile_pictures',
         public_id: `profile-${id}`,
         overwrite: true,

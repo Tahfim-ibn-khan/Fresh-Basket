@@ -19,12 +19,14 @@ cloudinary.config({
 
 const storage = new CloudinaryStorage({
   cloudinary,
-  params: {
-    folder: 'profile_pictures',
-    format: async (req, file) => 'png',
-    public_id: (req, file) => `profile-${req.params.id}`,
-  },
+  params: async (req, file) => ({
+    resource_type: 'image',
+    public_id: `profile-${req.params.id}`,
+    format: 'png',
+    folder: 'profile_pictures', // ✅ Now inside params object
+  }),
 });
+
 
 const upload = multer({ storage });
 
