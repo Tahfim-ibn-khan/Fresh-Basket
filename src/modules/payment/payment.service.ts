@@ -12,7 +12,7 @@ export class PaymentService {
     @InjectRepository(Order)
     private readonly orderRepository: Repository<Order>,
   ) {
-    const secretKey = 'sk_test_51QWgQ4E24OBKFp2Uxj21Mc4vDLyYhfRW35NfuQza4hbpnfhSq3IfpQBQ1i5xQEN3FmNtlPuZ2waWqRGjRFXHbNVv00w2fVZofM'; // Hardcoded Stripe Secret Key for testing
+    const secretKey = 'sk_test_51QWgQ4E24OBKFp2Uxj21Mc4vDLyYhfRW35NfuQza4hbpnfhSq3IfpQBQ1i5xQEN3FmNtlPuZ2waWqRGjRFXHbNVv00w2fVZofM';
     if (!secretKey) {
       throw new InternalServerErrorException('Stripe Secret Key is missing.');
     }
