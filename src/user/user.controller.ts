@@ -7,8 +7,26 @@ import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/common/guards/roles.guard';
 import { Roles } from 'src/common/decorators/roles.decorator';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { diskStorage } from 'multer';
-import * as path from 'path';
+import { CloudinaryStorage } from 'multer-storage-cloudinary';
+import { v2 as cloudinary } from 'cloudinary';
+import * as multer from 'multer';
+
+cloudinary.config({
+  cloud_name: 'dquhmyg3y',
+  api_key: '339583574244771',
+  api_secret: 'UoUKPOUzhxoWFs_yiTKHzoNLRc4',
+});
+
+const storage = new CloudinaryStorage({
+  cloudinary,
+  params: {
+    folder: 'profile_pictures',
+    format: async (req, file) => 'png',
+    public_id: (req, file) => `profile-${req.params.id}`,
+  },
+});
+
+const upload = multer({ storage });
 
 @Controller('users')
 @UseGuards(JwtAuthGuard, RolesGuard) 
@@ -36,26 +54,13 @@ export class UserController {
     return this.userService.updateUserRole(id, updateRoleDto.role);
   }
 
-  // ✅ Get User Profile
   @Get('/profile/:id')
   async getUserProfile(@Param('id') id: number) {
     return this.userService.getUserProfile(id);
   }
 
-  // ✅ Update User Profile (with Profile Picture Upload)
   @Patch('/profile/update/:id')
-  @UseInterceptors(
-    FileInterceptor('profilePicture', {
-      storage: diskStorage({
-        destination: './uploads/profile_pictures',
-        filename: async (req, file, cb) => {
-          const userId = req.params.id;
-          const ext = path.extname(file.originalname);
-          cb(null, `profile-${userId}${ext}`); // ✅ Name file as "profile-{id}.jpg"
-        },
-      }),
-    }),
-  )
+  @UseInterceptors(FileInterceptor('profilePicture', { storage }))
   async updateProfile(
     @Param('id') id: number,
     @Body() updateProfileDto: UpdateProfileDto,
