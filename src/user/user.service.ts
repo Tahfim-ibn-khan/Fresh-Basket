@@ -88,12 +88,19 @@ export class UserService {
   }
 
   async removeUser(id: number): Promise<string> {
-    const user = await this.userRepository.findOne({ where: { id } });
-    if (!user) {
-      throw new NotFoundException(`User with ID ${id} not found.`);
+    try {
+      const user = await this.userRepository.findOne({ where: { id } });
+      
+      if (!user) {
+        throw new NotFoundException(`User with ID ${id} not found.`);
+      }
+  
+      await this.userRepository.delete(id);
+      return 'User removed successfully!';
+    } catch (error) {
+      console.error("❌ Error removing user:", error);
+      throw new InternalServerErrorException("Failed to remove user. Please try again.");
     }
-
-    await this.userRepository.delete(id);
-    return 'User removed successfully!';
   }
+  
 }
