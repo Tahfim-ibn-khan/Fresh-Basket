@@ -5,7 +5,6 @@ import { User } from 'src/entities/user.entity';
 import { AddUserDto } from '../modules/DTOs/add-user.dto';
 import { UpdateProfileDto } from '../modules/DTOs/update-profile.dto';
 import { v2 as cloudinary } from 'cloudinary';
-import { UploadApiResponse } from 'cloudinary';
 
 @Injectable()
 export class UserService {
@@ -55,33 +54,25 @@ export class UserService {
     if (!user) {
       throw new NotFoundException('User not found.');
     }
-  
+
     if (!user.profilePicture) {
       user.profilePicture = "https://res.cloudinary.com/dquhmyg3y/image/upload/v1700000000/default-profile.png";
     }
-  
+
     return user;
   }
-  
 
-  async updateProfile(id: number, updateProfileDto: UpdateProfileDto, file?: Express.Multer.File) {
+  async updateProfile(id: number, updateProfileDto: UpdateProfileDto) {
     const user = await this.userRepository.findOne({ where: { id } });
     if (!user) {
       throw new NotFoundException('User not found.');
     }
 
     if (updateProfileDto.name) user.name = updateProfileDto.name;
-    if (updateProfileDto.email) user.email = updateProfileDto.email;
     if (updateProfileDto.password) user.password = updateProfileDto.password;
 
-    if (file) {
-      const uploadResult: UploadApiResponse = await cloudinary.uploader.upload(file.path, {
-        folder: 'profile_pictures',
-        public_id: `profile-${id}`,
-        overwrite: true,
-      });
-
-      user.profilePicture = uploadResult.secure_url;
+    if (updateProfileDto.profilePicture) {
+      user.profilePicture = updateProfileDto.profilePicture;
     }
 
     await this.userRepository.save(user);

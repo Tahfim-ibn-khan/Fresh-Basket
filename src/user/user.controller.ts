@@ -23,15 +23,14 @@ const storage = new CloudinaryStorage({
     resource_type: 'image',
     public_id: `profile-${req.params.id}`,
     format: 'png',
-    folder: 'profile_pictures', // ✅ Now inside params object
+    folder: 'profile_pictures',
   }),
 });
-
 
 const upload = multer({ storage });
 
 @Controller('users')
-@UseGuards(JwtAuthGuard, RolesGuard) 
+@UseGuards(JwtAuthGuard, RolesGuard)
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
@@ -42,13 +41,13 @@ export class UserController {
   }
 
   @Get('/getall')
-  @Roles('admin') 
+  @Roles('admin')
   async findAll(): Promise<any[]> {
     return this.userService.findAll();
   }
 
   @Post('update-role/:id')
-  @Roles('admin') 
+  @Roles('admin')
   async updateUserRole(
     @Param('id') id: number,
     @Body() updateRoleDto: UpdateRoleDto,
@@ -62,13 +61,11 @@ export class UserController {
   }
 
   @Patch('/profile/update/:id')
-  @UseInterceptors(FileInterceptor('profilePicture', { storage }))
   async updateProfile(
     @Param('id') id: number,
     @Body() updateProfileDto: UpdateProfileDto,
-    @UploadedFile() file: Express.Multer.File,
   ) {
-    return this.userService.updateProfile(id, updateProfileDto, file);
+    return this.userService.updateProfile(id, updateProfileDto);
   }
 
   @Delete('remove/:id')
