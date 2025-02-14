@@ -5,6 +5,8 @@ import { User } from 'src/entities/user.entity';
 import { AddUserDto } from '../modules/DTOs/add-user.dto';
 import { UpdateProfileDto } from '../modules/DTOs/update-profile.dto';
 import { v2 as cloudinary } from 'cloudinary';
+import * as bcrypt from "bcrypt";
+
 
 @Injectable()
 export class UserService {
@@ -65,19 +67,24 @@ export class UserService {
   async updateProfile(id: number, updateProfileDto: UpdateProfileDto) {
     const user = await this.userRepository.findOne({ where: { id } });
     if (!user) {
-      throw new NotFoundException('User not found.');
+      throw new NotFoundException("User not found.");
     }
-
+  
     if (updateProfileDto.name) user.name = updateProfileDto.name;
-    if (updateProfileDto.password) user.password = updateProfileDto.password;
-
+  
+    if (updateProfileDto.password) {
+      const saltRounds = 10;
+      const hashedPassword = await bcrypt.hash(updateProfileDto.password, saltRounds);
+      user.password = hashedPassword;
+    }
+  
     if (updateProfileDto.profilePicture) {
       user.profilePicture = updateProfileDto.profilePicture;
     }
-
+  
     await this.userRepository.save(user);
-
-    return { message: 'Profile updated successfully!', profilePicture: user.profilePicture };
+  
+    return { message: "Profile updated successfully!", profilePicture: user.profilePicture };
   }
 
   async removeUser(id: number): Promise<string> {
