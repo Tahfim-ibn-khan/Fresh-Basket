@@ -1,34 +1,38 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { User } from 'src/entities/user.entity';
 
 @Entity('orders')
 export class Order {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ name: 'user_id' })
-  userId: number;
+  @ManyToOne(() => User, (user) => user.id)
+  user: User;
 
-  @Column({ name: 'payment_method' })
+  @Column('decimal')
+  totalPrice: number;
+
+  @Column({ default: 'pending' }) // Values: pending, paid, delivered
+  status: string;
+
+  @Column({ nullable: true })
   paymentMethod: string;
 
   @Column()
-  status: string;
-
-  @Column('decimal', { name: 'total_price' })
-  totalPrice: number;
-
-  @Column({ name: 'order_date' })
-  orderDate: Date;
-
-  @Column({ name: 'delivery_address' })
   deliveryAddress: string;
 
-  @Column({ name: 'delivery_date', nullable: true })
-  deliveryDate: Date;
+  @Column()
+  phoneNumber: string;
 
-  @CreateDateColumn({ name: 'created_at' })
-  createdAt: Date;
+  @Column({ nullable: true })
+  deliveryInstructions: string;
 
-  @UpdateDateColumn({ name: 'updated_at' })
+  @Column('jsonb', { nullable: true, default: () => "'[]'::jsonb" })  // ✅ Allow null for existing orders
+  products: Array<{ productId: number; productName: string; quantity: number; unitPrice: number; total: number }> | null;
+
+  @CreateDateColumn()
+  orderDate: Date;
+
+  @UpdateDateColumn()
   updatedAt: Date;
 }

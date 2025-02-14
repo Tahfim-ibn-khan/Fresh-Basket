@@ -9,30 +9,31 @@ import { RolesGuard } from 'src/common/guards/roles.guard';
 import { Roles } from 'src/common/decorators/roles.decorator';
 
 @Controller('products')
-@UseGuards(JwtAuthGuard, RolesGuard) // Apply guards globally to all routes in this controller
 export class ProductController {
   constructor(private readonly productService: ProductService) {}
 
   @Post('/create')
-  @Roles('admin', 'store-manager') // Only admin and store-manager can create products
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin', 'store-manager')
   async create(@Body() createProductDto: CreateProductDto): Promise<Product> {
     return this.productService.create(createProductDto);
   }
 
+  // ✅ MAKE GET ALL PRODUCTS PUBLIC
   @Get('/getall')
-  @Roles('admin', 'store-manager', 'customer') // Admin, store-manager, and customer can view all products
-  async findAll(): Promise<Product[]> {
+  async findAll() {
     return this.productService.findAll();
   }
 
+  // ✅ MAKE GET PRODUCT BY ID PUBLIC
   @Get('get/:id')
-  @Roles('admin', 'store-manager', 'customer') // Allow access to specific product details
   async findOne(@Param('id') id: number): Promise<Product> {
     return this.productService.findOne(id);
   }
 
   @Post('update/:id')
-  @Roles('admin', 'store-manager') // Only admin and store-manager can update products
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin', 'store-manager')
   async update(
     @Param('id') id: number,
     @Body() updateProductDto: UpdateProductDto,
@@ -41,13 +42,15 @@ export class ProductController {
   }
 
   @Post('delete/:id')
-  @Roles('admin') // Only admin can delete products
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
   async remove(@Param('id') id: number): Promise<void> {
     return this.productService.remove(id);
   }
 
   @Post('discount/:id')
-  @Roles('admin', 'store-manager') // Admin and store-manager can apply discounts
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin', 'store-manager')
   async updateDiscount(
     @Param('id') id: number,
     @Body() updateDiscountDto: UpdateDiscountDto,

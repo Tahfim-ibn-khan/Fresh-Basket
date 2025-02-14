@@ -89,7 +89,6 @@ export class AuthService {
 
     user.isVerified = true;
     await this.userRepository.save(user);
-
     return 'Email verification successful. You can now log in.';
   }
 
@@ -115,6 +114,7 @@ export class AuthService {
         name: user.name,
         email: user.email,
         role: user.role,
+        isVerified: user.isVerified,
       },
       accessToken: this.jwtService.sign(payload),
     };

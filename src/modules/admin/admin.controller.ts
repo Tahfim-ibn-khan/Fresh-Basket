@@ -1,18 +1,29 @@
-import { Controller, Get, UseGuards, Req } from '@nestjs/common';
+import { Controller, Get, Query, UseGuards } from '@nestjs/common';
+import { AdminService } from './admin.service';
+import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/common/guards/roles.guard';
 import { Roles } from 'src/common/decorators/roles.decorator';
-import { Request } from 'express';
 
 @Controller('admin')
+@UseGuards(JwtAuthGuard, RolesGuard)
 export class AdminController {
-  @Get('dashboard')
-  @UseGuards(RolesGuard) // RolesGuard expects req.user to be set by JwtMiddleware
-  @Roles('admin') // Only allow 'admin' role
-  getAdminDashboard(@Req() req: Request) {
-    console.log('AdminController: Request User:', req.user);
-    return {
-      message: 'Welcome Admin Dashboard!',
-      user: req.user,
-    };
+  constructor(private readonly adminService: AdminService) {}
+
+  @Get('products')
+  @Roles('admin')
+  async getTotalProducts() {
+    return this.adminService.getTotalProducts();
+  }
+
+  @Get('sales')
+  @Roles('admin')
+  async getTotalSales(@Query('timePeriod') timePeriod: 'day' | 'week' | 'month' | 'year') {
+    return this.adminService.getTotalSales(timePeriod);
+  }
+
+  @Get('users')
+  @Roles('admin')
+  async getUserStatistics() {
+    return this.adminService.getUserStatistics();
   }
 }

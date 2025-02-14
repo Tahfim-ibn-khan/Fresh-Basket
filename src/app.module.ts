@@ -1,4 +1,4 @@
-import { Module, MiddlewareConsumer } from '@nestjs/common';
+import { Module, MiddlewareConsumer, RequestMethod } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -18,6 +18,7 @@ import { APP_GUARD } from '@nestjs/core';
 import { RolesGuard } from './common/guards/roles.guard';
 import { JwtMiddleware } from './common/middleware/jwt.middleware';
 import { JwtModule } from '@nestjs/jwt';
+import { InvoiceModule } from './modules/invoice/invoice.module';
 
 @Module({
   imports: [
@@ -46,6 +47,7 @@ import { JwtModule } from '@nestjs/jwt';
       secret: process.env.JWT_SECRET || 'your_secret_key',
       signOptions: { expiresIn: '1h' },
     }),
+    InvoiceModule,
   ],
   controllers: [AppController],
   providers: [
@@ -61,7 +63,14 @@ import { JwtModule } from '@nestjs/jwt';
 export class AppModule {
   configure(consumer: MiddlewareConsumer) {
     consumer
-      .apply(JwtMiddleware) 
+      .apply(JwtMiddleware)
+      .exclude(
+        { path: 'products/getall', method: RequestMethod.GET }, // ✅ Public Route (No Token Needed)
+        { path: 'products/get/:id', method: RequestMethod.GET }, // ✅ Public Route (No Token Needed)
+        { path: 'auth/login', method: RequestMethod.POST }, // ✅ Public Route
+        { path: 'auth/register', method: RequestMethod.POST }, // ✅ Public Route
+        { path: 'auth/verify-otp', method: RequestMethod.POST }, // ✅ Public Route
+      )
       .forRoutes('*'); 
   }
 }

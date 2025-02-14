@@ -26,6 +26,9 @@ export class User {
   @Column({ default: 'customer' })
   role: string;
 
+  @Column({ nullable: true })
+  profilePicture: string;
+
   @CreateDateColumn()
   created_at: Date;
 

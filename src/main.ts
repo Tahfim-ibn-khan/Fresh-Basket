@@ -1,12 +1,29 @@
-import { ValidationPipe } from '@nestjs/common';
-import { NestFactory } from '@nestjs/core';
-import { AppModule } from './app.module';
+import { NestFactory } from "@nestjs/core";
+import { AppModule } from "./app.module";
+import * as express from "express";
+import * as path from "path";
+import { ConfigService } from "@nestjs/config";
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  const configService = app.get(ConfigService);
 
-  app.useGlobalPipes(new ValidationPipe());
+  const allowedOrigins = process.env.CLIENT_ORIGIN || "http://localhost:3001";
 
-  await app.listen(3000);
+  app.enableCors({
+    origin: allowedOrigins.split(","),
+    methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
+    credentials: true,
+  });
+
+  app.use(
+    "/uploads/profile_pictures",
+    express.static(path.join(__dirname, "..", "uploads/profile_pictures"))
+  );
+
+  const port = process.env.PORT || 3000;
+  await app.listen(port);
+  console.log(`🚀 Server running on port ${port}`);
 }
+
 bootstrap();

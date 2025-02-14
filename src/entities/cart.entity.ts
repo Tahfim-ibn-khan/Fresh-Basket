@@ -1,22 +1,31 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  CreateDateColumn,
+  UpdateDateColumn,
+} from 'typeorm';
+import { User } from 'src/entities/user.entity';
+import { Product } from 'src/entities/product.entity';
 
 @Entity('carts')
 export class Cart {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ name: 'product_id' })
-  productId: number;
+  @ManyToOne(() => User, (user) => user.id)
+  user: User;
 
-  @Column({ name: 'user_id' })
-  userId: number;
+  @ManyToOne(() => Product, (product) => product.carts, { onDelete: "CASCADE" }) // ✅ Enable CASCADE DELETE
+  product: Product;  
 
   @Column()
   quantity: number;
 
-  @CreateDateColumn({ name: 'created_at' })
+  @CreateDateColumn()
   createdAt: Date;
 
-  @UpdateDateColumn({ name: 'updated_at' })
+  @UpdateDateColumn()
   updatedAt: Date;
 }

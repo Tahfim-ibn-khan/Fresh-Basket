@@ -1,4 +1,4 @@
-import { IsEmail, IsNotEmpty, MinLength, IsIn } from 'class-validator';
+import { IsEmail, IsNotEmpty, MinLength, IsIn, IsOptional } from 'class-validator';
 
 export class AddUserDto {
   @IsNotEmpty()
@@ -11,6 +11,9 @@ export class AddUserDto {
   @MinLength(6)
   password: string;
 
-  @IsIn(['admin', 'customer', 'delivery-agent', 'store manager'])
+  @IsIn(['admin', 'customer', 'delivery-agent', 'store-manager'])
   role: string;
+
+  @IsOptional()
+  profilePicture?: string; 
 }
