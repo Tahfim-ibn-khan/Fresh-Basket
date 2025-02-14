@@ -27,7 +27,7 @@ import { InvoiceModule } from './modules/invoice/invoice.module';
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
         type: 'postgres',
-        url: configService.get<string>('DATABASE_URL'),
+        url: 'postgresql://postgres:euFmQFtsyGOSgdlOgRLQLjGgbVlUOkdj@junction.proxy.rlwy.net:30325/railway',
         autoLoadEntities: true,
         synchronize: configService.get<boolean>('DB_SYNCHRONIZE', false),
         ssl: { rejectUnauthorized: false },
