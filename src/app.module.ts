@@ -27,10 +27,10 @@ import { InvoiceModule } from './modules/invoice/invoice.module';
     }),
     TypeOrmModule.forRoot({
       type: 'postgres',
-      url: 'postgresql://postgres:euFmQFtsyGOSgdlOgRLQLjGgbVlUOkdj@postgres.railway.internal:5432/railway',
+      url: 'postgresql://postgres:euFmQFtsyGOSgdlOgRLQLjGgbVlUOkdj@junction.proxy.rlwy.net:30325/railway',
       autoLoadEntities: true,
-      synchronize: true, // Set to false in production
-      ssl: { rejectUnauthorized: false } // Required for Railway
+      synchronize: true,
+      ssl: { rejectUnauthorized: false }, 
     }),
     AdminModule,
     AuthModule,
