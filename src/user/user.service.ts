@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, InternalServerErrorException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from 'src/entities/user.entity';
@@ -6,6 +6,7 @@ import { AddUserDto } from '../modules/DTOs/add-user.dto';
 import { UpdateProfileDto } from '../modules/DTOs/update-profile.dto';
 import { v2 as cloudinary } from 'cloudinary';
 import * as bcrypt from "bcrypt";
+
 
 
 @Injectable()
