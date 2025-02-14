@@ -27,13 +27,10 @@ import { InvoiceModule } from './modules/invoice/invoice.module';
     }),
     TypeOrmModule.forRoot({
       type: 'postgres',
-      host: 'localhost',
-      port: 5432,
-      username: 'postgres',
-      password: 'root',
-      database: 'FreshBasket',
-      entities: [__dirname + '/**/*.entity{.ts,.js}'],
-      synchronize: true,
+      url: 'postgresql://postgres:euFmQFtsyGOSgdlOgRLQLjGgbVlUOkdj@postgres.railway.internal:5432/railway',
+      autoLoadEntities: true,
+      synchronize: true, // Set to false in production
+      ssl: { rejectUnauthorized: false } // Required for Railway
     }),
     AdminModule,
     AuthModule,
