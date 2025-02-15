@@ -19,6 +19,7 @@ export class InvoiceService {
       cloud_name: 'dquhmyg3y',
       api_key: '339583574244771',
       api_secret: 'UoUKPOUzhxoWFs_yiTKHzoNLRc4',
+      secure: true,
     });
   }
 
@@ -38,19 +39,22 @@ export class InvoiceService {
       throw new NotFoundException(`Customer for Order #${orderId} not found.`);
     }
 
-    const pdfBuffer = await this.createInvoicePDF(order, user);
+    try {
+      const pdfBuffer = await this.createInvoicePDF(order, user);
+      const uploadedInvoice: UploadApiResponse | null = await this.uploadToCloudinary(pdfBuffer, `invoice-${orderId}.pdf`);
 
-    // ✅ Upload to Cloudinary
-    const uploadedInvoice: UploadApiResponse | null = await this.uploadToCloudinary(pdfBuffer, `invoice-${orderId}.pdf`);
+      if (!uploadedInvoice?.secure_url) {
+        throw new InternalServerErrorException("Failed to upload invoice to Cloudinary.");
+      }
 
-    if (!uploadedInvoice?.secure_url) {
-      throw new InternalServerErrorException("Failed to upload invoice to Cloudinary.");
+      return {
+        message: `Invoice for Order #${orderId} has been generated successfully.`,
+        invoiceUrl: uploadedInvoice.secure_url,
+      };
+    } catch (error) {
+      console.error("❌ Error generating invoice:", error);
+      throw new InternalServerErrorException("Invoice generation failed. Please try again.");
     }
-
-    return {
-      message: `Invoice for Order #${orderId} has been generated.`,
-      invoiceUrl: uploadedInvoice.secure_url, // ✅ Return Cloudinary URL
-    };
   }
 
   private async createInvoicePDF(order: Order, user: User): Promise<Buffer> {
@@ -58,22 +62,17 @@ export class InvoiceService {
       const doc = new PDFDocument({ margin: 50 });
       const buffers: Buffer[] = [];
 
-      doc.on('data', buffers.push.bind(buffers));
+      doc.on('data', (chunk) => buffers.push(chunk));
       doc.on('end', () => resolve(Buffer.concat(buffers)));
-      doc.on('error', reject);
+      doc.on('error', (err) => reject(err));
 
-      // ✅ Invoice Header
       doc.fontSize(20).text(`Invoice - Order #${order.id}`, { align: 'center' }).moveDown();
       doc.fontSize(14).text(`Date: ${new Date().toLocaleDateString()}`, { align: 'right' }).moveDown();
-
-      // ✅ Customer Details
       doc.fontSize(14).text('Customer Details:', { underline: true }).moveDown(0.5);
       doc.fontSize(12).text(`Name: ${user.name}`);
       doc.text(`Email: ${user.email}`);
       doc.text(`Phone: ${order.phoneNumber || 'N/A'}`);
       doc.text(`Address: ${order.deliveryAddress || 'N/A'}`).moveDown();
-
-      // ✅ Order Summary
       doc.fontSize(14).text('Order Summary:', { underline: true }).moveDown(0.5);
       doc.fontSize(12)
         .text('Item', 50, doc.y)
