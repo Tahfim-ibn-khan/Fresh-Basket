@@ -5,7 +5,7 @@ import { Repository } from 'typeorm';
 import { Order } from 'src/entities/order.entity';
 import { User } from 'src/entities/user.entity';
 import { v2 as cloudinary, UploadApiResponse } from 'cloudinary';
-import stream from 'stream';
+import { PassThrough } from 'stream';
 
 @Injectable()
 export class InvoiceService {
@@ -107,10 +107,11 @@ export class InvoiceService {
           }
         }
       );
-
-      const bufferStream = new stream.PassThrough();
+  
+      const bufferStream = new PassThrough();
       bufferStream.end(pdfBuffer);
       bufferStream.pipe(uploadStream);
     });
   }
+  
 }
