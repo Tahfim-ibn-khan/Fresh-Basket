@@ -8,7 +8,7 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const configService = app.get(ConfigService);
 
-  const allowedOrigins ='http://localhost:3000';
+  const allowedOrigins ='https://freshbasket-frontend.vercel.app';
 
   app.enableCors({
     origin: allowedOrigins.split(","),
