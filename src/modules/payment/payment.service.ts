@@ -46,8 +46,8 @@ export class PaymentService {
         },
       ],
       mode: 'payment',
-      success_url: `http://localhost:3001/payment/success?session_id={CHECKOUT_SESSION_ID}&orderId=${order.id}`,
-      cancel_url: `http://localhost:3001/payment/cancel/${order.id}`,
+      success_url: `https://freshbasket-frontend.vercel.app/payment/success?session_id={CHECKOUT_SESSION_ID}&orderId=${order.id}`,
+      cancel_url: `https://freshbasket-frontend.vercel.app/payment/cancel/${order.id}`,
     });
 
     if (!session.url) {
